@@ -1,6 +1,9 @@
 package auth
 
-const (
-	ErrUserExists = "user exists"
-	ErrWrongCredetials = "wrong email or password"
+import "url/short/pkg/errors"
+
+// Предопределенные ошибки для модуля аутентификации
+var (
+	ErrUserExists       = errors.ErrUserExists
+	ErrWrongCredentials = errors.ErrWrongCredentials
 )

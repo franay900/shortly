@@ -1,7 +1,8 @@
 package link
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"url/short/internal/stat"
 
 	"gorm.io/gorm"
@@ -28,11 +29,17 @@ func (link *Link) generateHash() {
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
+// RandStringRunes генерирует криптографически стойкую случайную строку
 func RandStringRunes(n int) string {
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+		// Используем криптографически стойкий генератор случайных чисел
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letterRunes))))
+		if err != nil {
+			// В случае ошибки используем fallback (не должно происходить в нормальных условиях)
+			panic("failed to generate random number: " + err.Error())
+		}
+		b[i] = letterRunes[num.Int64()]
 	}
-
 	return string(b)
 }

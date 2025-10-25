@@ -1,6 +1,10 @@
 package user
 
-import "url/short/pkg/db"
+import (
+	"errors"
+	"url/short/pkg/db"
+	"gorm.io/gorm"
+)
 
 type UserRepository struct {
 	database *db.DB
@@ -24,6 +28,9 @@ func (repo *UserRepository) FindByEmail(email string) (*User, error) {
 	result := repo.database.DB.First(&user, "email = ?", email)
 
 	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil // Пользователь не найден - это нормально
+		}
 		return nil, result.Error
 	}
 
