@@ -3,7 +3,6 @@ package auth
 import (
 	"net/http"
 	"url/short/configs"
-	"url/short/pkg/errors"
 	"url/short/pkg/jwt"
 	"url/short/pkg/req"
 	"url/short/pkg/res"
@@ -30,22 +29,22 @@ func NewAuthHandler(router *http.ServeMux, deps AuthHandlerDeps) {
 
 func (handler *AuthHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := req.HandleBody[LoginRequest](w, r)
+
+		body, err := req.HandleBody[LoginRequest](&w, r)
+
 		if err != nil {
 			return
 		}
-
 		email, err := handler.AuthService.Login(body.Email, body.Password)
 		if err != nil {
-			errors.WriteError(w, err, errors.GetStatusCode(err))
+			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
-
 		token, err := jwt.NewJWT(handler.Config.Auth.Secret).Create(jwt.JWTData{
 			Email: email,
 		})
 		if err != nil {
-			errors.WriteError(w, errors.WrapError(err, errors.ErrCodeInternalError, "Failed to create token"), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -54,27 +53,29 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 		}
 
 		res.Json(w, data, http.StatusOK)
+
 	}
 }
 
 func (handler *AuthHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := req.HandleBody[RegisterRequest](w, r)
+		body, err := req.HandleBody[RegisterRequest](&w, r)
+
 		if err != nil {
 			return
 		}
 
 		email, err := handler.AuthService.Register(body.Email, body.Password, body.Name)
 		if err != nil {
-			errors.WriteError(w, err, errors.GetStatusCode(err))
+			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
-
 		token, err := jwt.NewJWT(handler.Config.Auth.Secret).Create(jwt.JWTData{
 			Email: email,
 		})
+
 		if err != nil {
-			errors.WriteError(w, errors.WrapError(err, errors.ErrCodeInternalError, "Failed to create token"), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 

@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"errors"
 	"url/short/internal/user"
 	"url/short/pkg/di"
-	"url/short/pkg/errors"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,36 +17,30 @@ func NewAuthService(userRepository di.IUserRepository) *AuthService {
 }
 
 func (service *AuthService) Login(email, password string) (string, error) {
-	existedUser, err := service.UserRepository.FindByEmail(email)
-	if err != nil {
-		return "", errors.WrapError(err, errors.ErrCodeDatabaseError, "Failed to find user")
-	}
-
+	existedUser, _ := service.UserRepository.FindByEmail(email)
 	if existedUser == nil {
-		return "", ErrWrongCredentials
+		return "", errors.New(ErrWrongCredetials)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
+	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
+
 	if err != nil {
-		return "", ErrWrongCredentials
+		return "", errors.New(ErrWrongCredetials)
 	}
 
 	return existedUser.Email, nil
+
 }
 
 func (service *AuthService) Register(email, password, name string) (string, error) {
-	existedUser, err := service.UserRepository.FindByEmail(email)
-	if err != nil {
-		return "", errors.WrapError(err, errors.ErrCodeDatabaseError, "Failed to check if user exists")
-	}
-
+	existedUser, _ := service.UserRepository.FindByEmail(email)
 	if existedUser != nil {
-		return "", ErrUserExists
+		return "", errors.New(ErrUserExists)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
-		return "", errors.WrapError(err, errors.ErrCodeInternalError, "Failed to hash password")
+		return "", err
 	}
 
 	user := &user.User{
@@ -56,9 +50,11 @@ func (service *AuthService) Register(email, password, name string) (string, erro
 	}
 
 	_, err = service.UserRepository.Create(user)
+
 	if err != nil {
-		return "", errors.WrapError(err, errors.ErrCodeDatabaseError, "Failed to create user")
+		return "", err
 	}
 
 	return user.Email, nil
+
 }

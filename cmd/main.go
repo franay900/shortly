@@ -1,14 +1,8 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 	"url/short/configs"
 	"url/short/internal/auth"
 	"url/short/internal/link"
@@ -64,34 +58,10 @@ func App() http.Handler {
 
 func main() {
 	app := App()
-	server := &http.Server{
+	server := http.Server{
 		Addr:    ":8081",
 		Handler: app,
 	}
-
-	// Запускаем сервер в горутине
-	go func() {
-		fmt.Println("Server is listening on port 8081")
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server failed to start: %v", err)
-		}
-	}()
-
-	// Ожидаем сигнал для graceful shutdown
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Println("Shutting down server...")
-
-	// Создаем контекст с таймаутом для graceful shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Останавливаем сервер
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
-	}
-
-	log.Println("Server exited")
+	fmt.Println("Server is listening on port 8081")
+	server.ListenAndServe()
 }
