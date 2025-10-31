@@ -31,15 +31,16 @@ func App() http.Handler {
 		StatRepository: statRepository,
 	})
 
+	linkService := link.NewLinkService(linkRepository, eventBus)
+
 	// Handler
 	auth.NewAuthHandler(router, auth.AuthHandlerDeps{
 		Config:      conf,
 		AuthService: authService,
 	})
 	link.NewLinkHandler(router, link.LinkHandlerDeps{
-		LinkRepository: linkRepository,
-		Config:         conf,
-		EventBus:       eventBus,
+		LinkService: linkService,
+		Config:      conf,
 	})
 	stat.NewStatHandler(router, stat.StatHandlerDeps{
 		StatRepository: statRepository,
